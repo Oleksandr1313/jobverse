@@ -1,50 +1,115 @@
 import streamlit as st
+import psycopg2
 import pandas as pd
-
+from dotenv import load_dotenv
 import os
-import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+# Load env variables
+load_dotenv()
 
-from database.data_reader import fetch_jobs
+HOST = os.getenv("DB_HOST")
+DATABASE = os.getenv("DB_NAME")
+USER = os.getenv("DB_USER")
+PASSWORD = os.getenv("DB_PASSWORD")
+PORT = os.getenv("DB_PORT")
 
-st.set_page_config(page_title="Job Market Dashboard", layout="wide")
-st.title("Job Market Dashboard")
-st.markdown("Browse the latest Data Scientist and Software Developer jobs in Winnipeg!")
+# Page config
+st.set_page_config(
+    page_title="JobVerse Dashboard",
+    page_icon="💼",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# Fetch jobs
-jobs = fetch_jobs()
+# ---- DATABASE CONNECTION ----
+def get_conn():
+    return psycopg2.connect(
+        host=HOST, database=DATABASE, user=USER, password=PASSWORD, port=PORT
+    )
 
-if not jobs:
-    st.info("No jobs found in the database yet.")
+@st.cache_data(ttl=600)
+def load_data():
+    conn = get_conn()
+    df = pd.read_sql("SELECT * FROM jobs ORDER BY id DESC;", conn)
+    conn.close()
+    return df
+
+# ---- MAIN APP ----
+st.title("💼 JobVerse – Job Market Dashboard")
+st.markdown("Explore the latest scraped jobs from **Indeed** and **Glassdoor** in a modern interface.")
+
+df = load_data()
+
+if df.empty:
+    st.warning("No jobs found in the database. Try running the scraper first.")
 else:
-    # Convert to DataFrame
-    df = pd.DataFrame(jobs, columns=["ID", "Job Title", "Company", "Location", "Description", "Source URL"])
+    # Sidebar filters
+    st.sidebar.header("🔍 Filters")
+    selected_company = st.sidebar.selectbox("Filter by Company", ["All"] + sorted(df["company"].dropna().unique().tolist()))
+    selected_location = st.sidebar.selectbox("Filter by Location", ["All"] + sorted(df["location"].dropna().unique().tolist()))
 
-    # Interactive table
-    st.dataframe(df, use_container_width=True)
+    filtered_df = df.copy()
+    if selected_company != "All":
+        filtered_df = filtered_df[filtered_df["company"] == selected_company]
+    if selected_location != "All":
+        filtered_df = filtered_df[filtered_df["location"] == selected_location]
 
-    # Optional: add filters
-    st.sidebar.header("Filters")
-    companies = st.sidebar.multiselect("Filter by Company", options=df["Company"].unique())
-    locations = st.sidebar.multiselect("Filter by Location", options=df["Location"].unique())
+    st.markdown(f"### Showing {len(filtered_df)} Job Results")
 
-    filtered_df = df
-    if companies:
-        filtered_df = filtered_df[filtered_df["Company"].isin(companies)]
-    if locations:
-        filtered_df = filtered_df[filtered_df["Location"].isin(locations)]
+    # ---- STYLING ----
+    st.markdown("""
+        <style>
+        .job-card {
+            background-color: #f8f9fa;
+            padding: 1.2rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 1rem;
+            transition: all 0.2s ease-in-out;
+        }
+        .job-card:hover {
+            background-color: #f1f3f6;
+            transform: translateY(-2px);
+        }
+        .job-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1e88e5;
+        }
+        .company-badge {
+            background-color: #e3f2fd;
+            color: #1565c0;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin-right: 0.5rem;
+        }
+        .job-location {
+            color: #555;
+            font-size: 0.9rem;
+        }
+        .job-desc {
+            margin-top: 0.8rem;
+            font-size: 0.9rem;
+            color: #333;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
-    st.subheader(f"Filtered Jobs ({len(filtered_df)})")
-    st.dataframe(filtered_df, use_container_width=True)
+    # ---- DISPLAY JOB CARDS ----
+    for _, row in filtered_df.iterrows():
+        with st.container():
+            st.markdown(f"""
+                <div class="job-card">
+                    <div class="job-title">{row['job_title'] or 'No Title'}</div>
+                    <div style="margin-top:4px;">
+                        <span class="company-badge">{row['company'] or 'Unknown Company'}</span>
+                        <span class="job-location">📍 {row['location'] or 'N/A'}</span>
+                    </div>
+                    <div class="job-desc">
+                        {row['description'][:250] + '...' if row['description'] and len(row['description']) > 250 else row['description'] or ''}
+                    </div>
+                    <a href="{row['source_url']}" target="_blank">🔗 View job posting</a>
+                </div>
+            """, unsafe_allow_html=True)
 
-    # Show job descriptions when clicked
-    st.subheader("Job Details")
-    job_id = st.number_input("Enter Job ID to see description", min_value=int(df["ID"].min()), max_value=int(df["ID"].max()), step=1)
-    job_row = df[df["ID"] == job_id]
-    if not job_row.empty:
-        st.markdown(f"**Job Title:** {job_row['Job Title'].values[0]}")
-        st.markdown(f"**Company:** {job_row['Company'].values[0]}")
-        st.markdown(f"**Location:** {job_row['Location'].values[0]}")
-        st.markdown(f"**Description:** {job_row['Description'].values[0]}")
-        st.markdown(f"[Source URL]({job_row['Source URL'].values[0]})")
