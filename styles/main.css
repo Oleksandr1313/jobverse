@@ -1,0 +1,96 @@
+/* --- Page Container --- */
+.block-container {
+    max-width: 80%; /* Leaves ~15% margin on both sides */
+    margin: 0 auto;
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+}
+
+/* --- Sidebar Styling --- */
+section[data-testid="stSidebar"] {
+    background-color: #1f2937;
+    color: #f9fafb;
+    border-right: 1px solid #374151;
+}
+section[data-testid="stSidebar"] .stSelectbox label,
+section[data-testid="stSidebar"] .stSelectbox div,
+section[data-testid="stSidebar"] .stMarkdown {
+    color: #f9fafb !important;
+}
+
+/* --- Job Card Styling --- */
+.job-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1.2rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    transition: all 0.2s ease-in-out;
+}
+.job-card:hover {
+    background: #f9fafb;
+    transform: translateY(-2px);
+}
+.job-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #0a66c2;
+    margin-bottom: 0.3rem;
+}
+.company-badge {
+    font-weight: 500;
+    color: #111827;
+    margin-right: 0.5rem;
+}
+.job-location {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+.job-desc {
+    margin-top: 0.8rem;
+    font-size: 0.95rem;
+    color: #374151;
+    line-height: 1.5;
+}
+a.job-link {
+    display: inline-block;
+    margin-top: 0.8rem;
+    color: #0a66c2;
+    font-weight: 600;
+    text-decoration: none;
+}
+a.job-link:hover {
+    text-decoration: underline;
+}
+
+/* --- Column Layout Styling --- */
+div[data-testid="column"] {
+    padding: 0 1rem;
+}
+
+/* Optional: Add subtle divider between columns */
+div[data-testid="column"]:nth-of-type(1) {
+    border-right: 1px solid #e5e7eb;
+    padding-right: 2rem;
+}
+div[data-testid="column"]:nth-of-type(2) {
+    padding-left: 2rem;
+}
+
+/* --- Resume Analyzer Section --- */
+.resume-analyzer {
+    background-color: #f3f4f6;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.resume-analyzer h3 {
+    color: #0a66c2;
+    margin-bottom: 1rem;
+}
+.resume-analyzer p {
+    color: #374151;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
