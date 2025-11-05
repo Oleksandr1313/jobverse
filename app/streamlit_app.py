@@ -26,7 +26,9 @@ with open(styles_file_path, "r", encoding="utf-8") as styles_read:
 st.markdown(f"<style>{styles}</style>", unsafe_allow_html=True)
 
 # --- Header ---
-st.title("JOBVERSE")
+st.markdown("""
+    <h1 style='text-align: center; margin-top: 0;'>JOBVERSE</h1>
+""", unsafe_allow_html=True)
 
 # --- Sidebar ---
 if st.sidebar.button("🔄 Refresh Jobs"):
